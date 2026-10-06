@@ -3,14 +3,14 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Tender package builder',
-  description: 'Build and validate a tender PDF submission package locally in your browser.',
+  description: 'Build and validate a tender PDF submission package locally in browser.',
   icons: {
     icon: [
-      { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
-      { url: '/icon-dark-32x32.png', media: '(prefers-color-scheme: dark)' },
-      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/icon.png', media: '(prefers-color-scheme: light)' },
+      { url: '/icon.png', media: '(prefers-color-scheme: dark)' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icon.png',
   },
 }
 
