@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { PDFDocument, StandardFonts, rgb, type PDFFont } from 'pdf-lib'
+import { PDFDocument } from 'pdf-lib'
+import { buildPackage, packageFilename } from './package-pdf'
 import JSZip from 'jszip'
 import { AlertTriangle, Check, FileArchive, FileText, FolderOpen, Languages, RefreshCcw, Trash2, Upload, X } from 'lucide-react'
 
@@ -63,20 +64,27 @@ const t = {
 /* ---------- Demo data ---------- */
 
 const sample: RequirementsFile = {
-  tender: { tender_id: 'T-2026-0417', title: 'Supply of IT Equipment', procuring_entity: 'Example Directorate', bidder: 'Example Company Ltd.', submission_deadline: '2026-10-20' },
+  tender: { tender_id: 'T-2026-0417', title: 'Supply of IT Equipment', procuring_entity: 'Directorate of Sample Services', bidder: 'Meghna Tech Solutions Ltd.', submission_deadline: '2026-10-20' },
   requirements: [
     { id: 'R01', order: 1, title_en: 'Trade License', title_bn: 'ট্রেড লাইসেন্স', mandatory: true, has_expiry: true },
-    { id: 'R02', order: 2, title_en: 'TIN Certificate', title_bn: 'টিআইএন সার্টিফিকেট', mandatory: true, has_expiry: false },
-    { id: 'R03', order: 3, title_en: 'VAT Certificate', title_bn: 'ভ্যাট সার্টিফিকেট', mandatory: false, has_expiry: true },
-    { id: 'R04', order: 4, title_en: 'Bank Solvency Certificate', title_bn: 'ব্যাংক সলভেন্সি সার্টিফিকেট', mandatory: true, has_expiry: false },
+    { id: 'R02', order: 2, title_en: 'TIN Certificate', title_bn: 'টিআইএন সনদ', mandatory: true, has_expiry: false },
+    { id: 'R03', order: 3, title_en: 'VAT Registration Certificate', title_bn: 'ভ্যাট নিবন্ধন সনদ', mandatory: true, has_expiry: false },
+    { id: 'R04', order: 4, title_en: 'Bank Solvency Certificate', title_bn: 'ব্যাংক সচ্ছলতা সনদ', mandatory: true, has_expiry: true },
+    { id: 'R05', order: 5, title_en: 'Experience Certificate', title_bn: 'অভিজ্ঞতার সনদ', mandatory: true, has_expiry: false },
+    { id: 'R06', order: 6, title_en: 'Audited Financial Statement', title_bn: 'নিরীক্ষিত আর্থিক বিবরণী', mandatory: false, has_expiry: false },
+    { id: 'R07', order: 7, title_en: 'Manufacturer\'s Authorization', title_bn: 'প্রস্তুতকারকের অনুমোদনপত্র', mandatory: false, has_expiry: true },
+    { id: 'R08', order: 8, title_en: 'Technical Proposal', title_bn: 'কারিগরি প্রস্তাব', mandatory: true, has_expiry: false },
+    { id: 'R09', order: 9, title_en: 'Financial Proposal', title_bn: 'আর্থিক প্রস্তাব', mandatory: true, has_expiry: false },
+    { id: 'R10', order: 10, title_en: 'Signed Declaration', title_bn: 'স্বাক্ষরিত ঘোষণাপত্র', mandatory: true, has_expiry: false },
   ],
 }
 
+ 
 const demoDocuments: DemoDocument[] = [
   { path: '/demo-documents/financial-proposal.pdf', name: 'financial-proposal.pdf' },
   { path: '/demo-documents/technical-proposal.pdf', name: 'technical-proposal.pdf' },
   { path: '/demo-documents/tin-certificate.pdf', name: 'tin-certificate.pdf', match: 'R02' },
-  { path: '/demo-documents/vat-certificate.pdf', name: 'vat-certificate.pdf', match: 'R03', expiry: '2026-12-31' },
+  { path: '/demo-documents/vat-certificate.pdf', name: 'vat-certificate.pdf', match: 'R03' },
   { path: '/demo-documents/bank-solvency.pdf', name: 'bank-solvency.pdf', match: 'R04' },
   { path: '/demo-documents/experience-certificate.pdf', name: 'experience-certificate.pdf' },
   { path: '/demo-documents/experience-certificate-2.pdf', name: 'experience-certificate-2.pdf' },
@@ -127,28 +135,6 @@ function statusFor(r: Requirement, d: Doc | undefined, deadline: string, s: (typ
 /** True when another file with identical content is already matched to a different requirement. */
 function hashUsedElsewhere(docs: Doc[], target: Doc, reqId: string) {
   return docs.some(y => y.id !== target.id && y.hash !== '' && y.hash === target.hash && y.match !== undefined && y.match !== reqId)
-}
-
-/** Helvetica (WinAnsi) cannot draw other scripts; replace unsupported characters. */
-const pdfSafe = (v: string) => v.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, '?')
-
-function fitText(text: string, font: PDFFont, size: number, maxW: number) {
-  let out = pdfSafe(text)
-  if (font.widthOfTextAtSize(out, size) <= maxW) return out
-  while (out.length > 1 && font.widthOfTextAtSize(out + '...', size) > maxW) out = out.slice(0, -1)
-  return out + '...'
-}
-
-function wrapText(text: string, font: PDFFont, size: number, maxW: number, maxLines: number) {
-  const lines: string[] = []
-  let line = ''
-  for (const word of pdfSafe(text).split(/\s+/)) {
-    const next = line ? `${line} ${word}` : word
-    if (font.widthOfTextAtSize(next, size) <= maxW) line = next
-    else { if (line) lines.push(line); line = word }
-  }
-  if (line) lines.push(line)
-  return lines.slice(0, maxLines).map(l => fitText(l, font, size, maxW))
 }
 
 /* ---------- Page ---------- */
@@ -208,6 +194,7 @@ export default function Page() {
           const pdf = await PDFDocument.load(bytes)
           added.push({ ...base, pages: pdf.getPageCount(), hash })
         } catch {
+          problems.push(`${file.name}: ${s.invalidPdf}`)
           added.push({ ...base, match: undefined, expiry: undefined, pages: 0, hash: '', error: s.invalidPdf })
         }
       }
@@ -290,59 +277,12 @@ export default function Page() {
     let url = ''
     try {
       const included = rows.filter(x => x.doc && !x.doc.error) as { r: Requirement; doc: Doc }[]
-      const out = await PDFDocument.create()
-      const font = await out.embedFont(StandardFonts.Helvetica)
-      const bold = await out.embedFont(StandardFonts.HelveticaBold)
-      const W = 595, H = 842, M = 48, FIRST_ROWS = 22, NEXT_ROWS = 32
-      const coverCount = 1 + Math.ceil(Math.max(0, included.length - FIRST_ROWS) / NEXT_ROWS)
-      const ink = rgb(0.09, 0.14, 0.2)
-
-      // Cover page(s): tender details plus a table of contents with page ranges.
-      let cover = out.addPage([W, H])
-      let y = H - 62
-      cover.drawText('TENDER SUBMISSION PACKAGE', { x: M, y, size: 20, font: bold, color: ink }); y -= 34
-      for (const line of wrapText(data.tender.title, bold, 14, W - 2 * M, 3)) { cover.drawText(line, { x: M, y, size: 14, font: bold, color: ink }); y -= 20 }
-      y -= 10
-      const info = [`Tender ID: ${data.tender.tender_id}`, `Procuring entity: ${data.tender.procuring_entity || '-'}`, `Bidder: ${data.tender.bidder || '-'}`, `Submission deadline: ${data.tender.submission_deadline}`]
-      for (const line of info) { cover.drawText(fitText(line, font, 11, W - 2 * M), { x: M, y, size: 11, font, color: ink }); y -= 18 }
-      y -= 14
-
-      const header = (page: typeof cover, yy: number, title: string) => {
-        page.drawText(title, { x: M, y: yy, size: 12, font: bold, color: ink })
-        yy -= 22
-        page.drawText('No.', { x: M, y: yy, size: 9, font: bold }); page.drawText('Document', { x: M + 40, y: yy, size: 9, font: bold })
-        page.drawText('Pages', { x: 430, y: yy, size: 9, font: bold }); page.drawText('Page range', { x: 490, y: yy, size: 9, font: bold })
-        return yy - 20
-      }
-      y = header(cover, y, 'Contents')
-
-      let nextPage = coverCount + 1
-      let rowsOnPage = 0
-      let capacity = FIRST_ROWS
-      included.forEach(({ r, doc }, i) => {
-        if (rowsOnPage === capacity) {
-          cover = out.addPage([W, H]); y = header(cover, H - 62, 'Contents (continued)'); rowsOnPage = 0; capacity = NEXT_ROWS
-        }
-        const range = doc.pages === 1 ? `${nextPage}` : `${nextPage}-${nextPage + doc.pages - 1}`
-        cover.drawText(String(i + 1).padStart(2, '0'), { x: M, y, size: 10, font })
-        cover.drawText(fitText(r.title_en, font, 10, 370), { x: M + 40, y, size: 10, font })
-        cover.drawText(String(doc.pages), { x: 430, y, size: 10, font })
-        cover.drawText(range, { x: 490, y, size: 10, font })
-        nextPage += doc.pages; y -= 20; rowsOnPage++
-      })
-
-      // Source documents, in requirement order.
-      for (const { doc } of included) {
-        const src = await PDFDocument.load(await doc.file.arrayBuffer())
-        const copied = await out.copyPages(src, src.getPageIndices())
-        copied.forEach(p => out.addPage(p))
-      }
-
-      const bytes = await out.save()
+      const items = await Promise.all(included.map(async ({ r, doc }) => ({ title: r.title_en, bytes: await doc.file.arrayBuffer() })))
+      const { bytes } = await buildPackage(data.tender, items)
       url = URL.createObjectURL(new Blob([new Uint8Array(bytes)], { type: 'application/pdf' }))
       const a = document.createElement('a')
       a.href = url
-      a.download = `${data.tender.tender_id.replace(/[^\w.-]+/g, '_')}_Package.pdf`
+      a.download = packageFilename(data.tender.tender_id)
       document.body.appendChild(a); a.click(); a.remove()
       setNotice(s.packageReady)
     } catch {
