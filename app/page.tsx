@@ -19,7 +19,7 @@ type DemoDocument = { path: string; name: string; match?: string; expiry?: strin
 
 const t = {
   en: {
-    app: 'Tender package builder', eyebrow: 'LOCAL WORKSPACE / FILES STAY IN YOUR BROWSER',
+    app: 'Tender package builder', eyebrow: 'LOCAL WORKSPACE',
     load: 'Load requirements', loadHint: 'Open requirements.json or a ZIP pack to begin.',
     demo: 'Load provided demo documents', drop: 'Drop requirements.json or ZIP here', browse: 'Browse files',
     tender: 'Tender ID', requirements: 'Required documents', documents: 'Uploaded PDF files',
@@ -39,7 +39,7 @@ const t = {
     localNote: 'Everything runs locally in this browser.', zipJson: 'ZIP pack / JSON',
   },
   bn: {
-    app: 'টেন্ডার প্যাকেজ বিল্ডার', eyebrow: 'লোকাল ওয়ার্কস্পেস / ফাইল ব্রাউজারেই থাকে',
+    app: 'টেন্ডার প্যাকেজ বিল্ডার', eyebrow: 'লোকাল ওয়ার্কস্পেস',
     load: 'প্রয়োজনীয়তা লোড করুন', loadHint: 'শুরু করতে requirements.json অথবা ZIP প্যাক খুলুন।',
     demo: 'প্রদত্ত ডেমো ডকুমেন্ট লোড করুন', drop: 'requirements.json বা ZIP এখানে ছাড়ুন', browse: 'ফাইল বাছাই করুন',
     tender: 'টেন্ডার আইডি', requirements: 'প্রয়োজনীয় ডকুমেন্ট', documents: 'আপলোড করা PDF',
