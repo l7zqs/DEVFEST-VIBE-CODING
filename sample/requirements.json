@@ -1,0 +1,15 @@
+{
+  "tender": {
+    "tender_id": "T-2026-0417",
+    "title": "Supply of IT Equipment",
+    "procuring_entity": "Example Directorate",
+    "bidder": "Example Company Ltd.",
+    "submission_deadline": "2026-10-20"
+  },
+  "requirements": [
+    { "id": "R01", "order": 1, "title_en": "Trade License", "title_bn": "ট্রেড লাইসেন্স", "mandatory": true, "has_expiry": true },
+    { "id": "R02", "order": 2, "title_en": "TIN Certificate", "title_bn": "টিআইএন সার্টিফিকেট", "mandatory": true, "has_expiry": false },
+    { "id": "R03", "order": 3, "title_en": "VAT Certificate", "title_bn": "ভ্যাট সার্টিফিকেট", "mandatory": false, "has_expiry": true },
+    { "id": "R04", "order": 4, "title_en": "Bank Solvency Certificate", "title_bn": "ব্যাংক সলভেন্সি সার্টিফিকেট", "mandatory": true, "has_expiry": false }
+  ]
+}

@@ -1,0 +1,24 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  --background: #f5f6f2;
+  --foreground: #172333;
+}
+
+html { font-family: Arial, 'Noto Sans Bengali', 'Nirmala UI', sans-serif; }
+body { margin: 0; background: var(--background); color: var(--foreground); }
+button, select, input { font: inherit; }
+button:focus-visible, select:focus-visible, input:focus-visible, label:focus-within {
+  outline: 2px solid #2c7a78;
+  outline-offset: 2px;
+}
+
+.label { color: #718087; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.status { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 999px; padding: 4px 8px; font-size: 10px; font-weight: 700; }
+.status-good { background: #e6f3ed; color: #28705e; }
+.status-warn { background: #fff3dc; color: #946219; }
+.status-bad { background: #fde9e5; color: #a24338; }
+.status-muted { background: #eef1ef; color: #748087; }
+
+@media (max-width: 768px) { html { font-size: 15px; } }
